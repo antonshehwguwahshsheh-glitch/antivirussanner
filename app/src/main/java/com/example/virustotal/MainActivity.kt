@@ -508,7 +508,7 @@ class MainActivity : AppCompatActivity() {
         resultText.setTextColor(color)
     }
 
-    private fun getFileHash(file: File): String? {
+        private fun getFileHash(file: File): String? {
         return try {
             val digest = MessageDigest.getInstance("SHA-256")
             file.inputStream().use { input ->
@@ -518,4 +518,9 @@ class MainActivity : AppCompatActivity() {
                     digest.update(buffer, 0, bytesRead)
                 }
             }
-            
+            digest.digest().joinToString("") { "%02x".format(it) }
+        } catch (e: Exception) {
+            null
+        }
+    }
+}
