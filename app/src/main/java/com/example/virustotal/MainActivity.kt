@@ -1,22 +1,19 @@
 package com.example.virustotal
 
-import android.Manifest
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
-import android.os.Looper
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import okhttp3.*
 import org.json.JSONObject
 import java.io.File
@@ -24,7 +21,6 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
 
@@ -39,18 +35,14 @@ class MainActivity : AppCompatActivity() {
     private var coins: Long = 0
     private var clickPower: Long = 1
     private var autoIncome: Long = 0
-    private var upgradeLevel: Int = 0
+    private var itemLevels = IntArray(6) { 0 }
     
     private lateinit var coinText: TextView
     private lateinit var clickPowerText: TextView
     private lateinit var autoIncomeText: TextView
-    private lateinit var shopButton: Button
     private lateinit var clickButton: Button
-    
-    private val handler = Handler(Looper.getMainLooper())
     private var timerRunning = false
 
-    // --- Инициализация выбора файла ---
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             val tempFile = copyUriToFile(uri)
@@ -65,15 +57,78 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // ЭКРАН 1: ГЛАВНОЕ МЕНЮ (Выбор)
+    // GTA VI STYLE BACKGROUND
+    // ==========================================
+    private fun applyGtaBackground(layout: LinearLayout) {
+        try {
+            // Ищем картинку gta_bg.png в папке drawable
+            val resId = resources.getIdentifier("gta_bg", "drawable", packageName)
+            
+            if (resId != 0) {
+                // Если картинка есть, ставим её
+                layout.setBackgroundResource(resId)
+                
+                // Накладываем темный фильтр, чтобы текст читался
+                val overlay = GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    intArrayOf(Color.parseColor("#AA1A0033"), Color.parseColor("#EE000000")) 
+                )
+                layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
+            } else {
+                // Если картинки нет, рисуем неоновый градиент кодом
+                layout.background = GradientDrawable(
+                    GradientDrawable.Orientation.TL_BR,
+                    intArrayOf(Color.parseColor("#FF007F"), Color.parseColor("#7F00FF"), Color.parseColor("#1A0033"))
+                )
+            }
+        } catch (e: Exception) {
+            layout.setBackgroundColor(Color.parseColor("#121212"))
+        }
+    }
+
+    // ==========================================
+    // РАДУЖНАЯ КНОПКА (ТГК)
+    // ==========================================
+    private fun createRainbowButton(text: String, onClick: () -> Unit): Button {
+        val button = Button(this).apply {
+            this.text = text
+            textSize = 18f
+            setTextColor(Color.WHITE)
+            setTypeface(null, Typeface.BOLD)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120)
+            
+            background = GradientDrawable(
+                GradientDrawable.Orientation.LEFT_RIGHT,
+                intArrayOf(
+                    Color.parseColor("#FF0000"), Color.parseColor("#FF7F00"),
+                    Color.parseColor("#FFFF00"), Color.parseColor("#00FF00"),
+                    Color.parseColor("#0000FF"), Color.parseColor("#4B0082"),
+                    Color.parseColor("#9400D3")
+                )
+            ).apply { cornerRadius = 30f }
+        }
+        button.setOnClickListener { onClick() }
+        return button
+    }
+
+    private fun openTelegramChannel() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://t.me/tgk_macaca_soft")))
+        } catch (e: Exception) {
+            Toast.makeText(this, "Cannot open Telegram link", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // ==========================================
+    // ЭКРАН 1: ГЛАВНОЕ МЕНЮ
     // ==========================================
     private fun showMainMenu() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
             setPadding(48, 48, 48, 48)
-            setBackgroundColor(Color.parseColor("#121212"))
         }
+        applyGtaBackground(layout)
 
         val logoView = ImageView(this).apply {
             setImageResource(R.drawable.logo)
@@ -82,8 +137,10 @@ class MainActivity : AppCompatActivity() {
 
         val title = TextView(this).apply {
             text = "VirusTotal"
-            textSize = 32f
-            setTextColor(Color.WHITE)
+            textSize = 36f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#FF00FF"))
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF"))
             gravity = Gravity.CENTER
             setPadding(0, 24, 0, 48)
         }
@@ -93,7 +150,7 @@ class MainActivity : AppCompatActivity() {
             textSize = 18f
             setBackgroundColor(Color.parseColor("#3B82F6"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 16) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120).apply { setMargins(0, 0, 0, 24) }
         }
 
         val gameButton = Button(this).apply {
@@ -101,13 +158,16 @@ class MainActivity : AppCompatActivity() {
             textSize = 18f
             setBackgroundColor(Color.parseColor("#F59E0B"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120).apply { setMargins(0, 0, 0, 24) }
         }
+
+        val tgButton = createRainbowButton("📢 MY TELEGRAM CHANNEL") { openTelegramChannel() }
 
         layout.addView(logoView)
         layout.addView(title)
         layout.addView(scanButton)
         layout.addView(gameButton)
+        layout.addView(tgButton)
         setContentView(layout)
 
         scanButton.setOnClickListener { showScannerScreen() }
@@ -115,7 +175,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     // ==========================================
-    // ЭКРАН 2: СКАНЕР (Твой старый интерфейс)
+    // ЭКРАН 2: СКАНЕР
     // ==========================================
     private fun showScannerScreen() {
         val prefs = getSharedPreferences("VirusTotalPrefs", Context.MODE_PRIVATE)
@@ -124,18 +184,31 @@ class MainActivity : AppCompatActivity() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32, 32, 32, 32)
-            setBackgroundColor(Color.parseColor("#121212"))
         }
+        applyGtaBackground(layout)
 
-        val backBtn = Button(this).apply { text = "< BACK"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE) }
+        val backBtn = Button(this).apply {
+            text = "← BACK"
+            textSize = 16f
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.START
+        }
         backBtn.setOnClickListener { showMainMenu() }
 
-        val title = TextView(this).apply { text = "Antivirus Scanner"; textSize = 24f; setTextColor(Color.WHITE); setPadding(0, 16, 0, 16) }
+        val title = TextView(this).apply { 
+            text = "Antivirus Scanner"
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            setShadowLayer(5f, 0f, 0f, Color.BLACK)
+            setPadding(0, 16, 0, 16) 
+        }
 
         apiKeyInput = EditText(this).apply {
             hint = "Enter API Key"
             setText(apiKey)
             setTextColor(Color.WHITE)
+            setHintTextColor(Color.LTGRAY)
             inputType = InputType.TYPE_CLASS_TEXT
         }
 
@@ -143,7 +216,12 @@ class MainActivity : AppCompatActivity() {
         val scanFileButton = Button(this).apply { text = "SELECT & SCAN FILE"; setBackgroundColor(Color.parseColor("#3B82F6")); setTextColor(Color.WHITE) }
 
         progressBar = ProgressBar(this).apply { visibility = View.GONE }
-        resultText = TextView(this).apply { text = "Ready to scan..."; setTextColor(Color.LTGRAY); setPadding(0, 16, 0, 16) }
+        resultText = TextView(this).apply { 
+            text = "Ready to scan..."
+            setTextColor(Color.LTGRAY)
+            setShadowLayer(5f, 0f, 0f, Color.BLACK)
+            setPadding(0, 16, 0, 16) 
+        }
 
         val scrollView = ScrollView(this).apply {
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f)
@@ -175,38 +253,51 @@ class MainActivity : AppCompatActivity() {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
             setPadding(48, 48, 48, 48)
-            setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
+        applyGtaBackground(layout)
 
-        val backBtn = Button(this).apply { text = "< BACK TO MENU"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE) }
+        val backBtn = Button(this).apply {
+            text = "← BACK TO MENU"
+            textSize = 16f
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.START
+        }
         backBtn.setOnClickListener { showMainMenu() }
 
-        val title = TextView(this).apply { text = "💰 COIN CLICKER"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.parseColor("#F59E0B")); setPadding(0, 16, 0, 32) }
+        val title = TextView(this).apply { 
+            text = "💰 COIN CLICKER"
+            textSize = 28f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#FF00FF"))
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF"))
+            setPadding(0, 16, 0, 32) 
+        }
 
-        coinText = TextView(this).apply { text = "Coins: $coins"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        clickPowerText = TextView(this).apply { text = "Tap Power: +$clickPower"; textSize = 16f; setTextColor(Color.GRAY); gravity = Gravity.CENTER; setPadding(0, 8, 0, 8) }
-        autoIncomeText = TextView(this).apply { text = "Auto Income: +$autoIncome / 5 min"; textSize = 16f; setTextColor(Color.GRAY); gravity = Gravity.CENTER; setPadding(0, 0, 0, 32) }
+        coinText = TextView(this).apply { text = "Coins: $coins"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER; setShadowLayer(5f, 0f, 0f, Color.BLACK) }
+        clickPowerText = TextView(this).apply { text = "Tap Power: +$clickPower"; textSize = 16f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 8, 0, 8) }
+        autoIncomeText = TextView(this).apply { text = "Auto Income: +$autoIncome / 5 min"; textSize = 16f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 0, 0, 32) }
 
         clickButton = Button(this).apply {
             text = "TAP ME!"
             textSize = 24f
-            setBackgroundColor(Color.parseColor("#10B981"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(400, 400) // Круглая большая кнопка
-            // Делаем её овальной (эмуляция круга)
-            background = android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
+            layoutParams = LinearLayout.LayoutParams(400, 400)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
                 setColor(Color.parseColor("#10B981"))
             }
         }
 
-        shopButton = Button(this).apply {
+        val shopButton = Button(this).apply {
             text = "🛒 OPEN SHOP"
             textSize = 18f
             setBackgroundColor(Color.parseColor("#8B5CF6"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 48, 0, 0) }
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 48, 0, 24) }
         }
+
+        val tgButton = createRainbowButton("📢 MY TELEGRAM CHANNEL") { openTelegramChannel() }
 
         layout.addView(backBtn)
         layout.addView(title)
@@ -215,6 +306,7 @@ class MainActivity : AppCompatActivity() {
         layout.addView(autoIncomeText)
         layout.addView(clickButton)
         layout.addView(shopButton)
+        layout.addView(tgButton)
         setContentView(layout)
 
         clickButton.setOnClickListener {
@@ -224,7 +316,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         shopButton.setOnClickListener { showShopScreen() }
-
         startAutoIncomeTimer()
     }
 
@@ -235,31 +326,42 @@ class MainActivity : AppCompatActivity() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(32, 32, 32, 32)
-            setBackgroundColor(Color.parseColor("#1A1A1A"))
         }
+        applyGtaBackground(layout)
 
-        val backBtn = Button(this).apply { text = "< BACK TO GAME"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE) }
+        val backBtn = Button(this).apply {
+            text = "← BACK TO GAME"
+            textSize = 16f
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.START
+        }
         backBtn.setOnClickListener { showGameScreen() }
 
-        val title = TextView(this).apply { text = "🛒 SHOP"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.WHITE); setPadding(0, 16, 0, 32) }
+        val title = TextView(this).apply { 
+            text = "🛒 SHOP"
+            textSize = 28f
+            setTypeface(null, Typeface.BOLD)
+            setTextColor(Color.parseColor("#FF00FF")) 
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF"))
+            setPadding(0, 16, 0, 32) 
+        }
 
         val shopScroll = ScrollView(this)
         val shopLayout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
 
-        // Генерация предметов магазина
         val items = listOf(
-            Triple("Tap Power +1", 100L, "CLICK"),
-            Triple("Tap Power +10", 1000L, "CLICK"),
+            Triple("Tap Power +1", 100L, "CLICK_1"),
+            Triple("Tap Power +10", 1000L, "CLICK_10"),
             Triple("Tap Power x2", 5000L, "MULTIPLY_CLICK"),
-            Triple("Auto Income +20/5m", 100L, "AUTO"),
-            Triple("Auto Income +100/5m", 1000L, "AUTO"),
+            Triple("Auto Income +20/5m", 100L, "AUTO_20"),
+            Triple("Auto Income +100/5m", 1000L, "AUTO_100"),
             Triple("Auto Income x2", 5000L, "MULTIPLY_AUTO")
         )
 
         for ((index, item) in items.withIndex()) {
             val (name, baseCost, type) = item
-            // Цена растет в 2 раза за каждую покупку
-            val cost = baseCost * (1L shl upgradeLevel) // 1L shl n = умножение на 2^n
+            val cost = baseCost * (1L shl itemLevels[index])
             
             val itemBtn = Button(this).apply {
                 text = "$name\nCost: $cost coins"
@@ -272,10 +374,10 @@ class MainActivity : AppCompatActivity() {
                 if (coins >= cost) {
                     coins -= cost
                     applyUpgrade(type)
-                    upgradeLevel++
+                    itemLevels[index]++
                     updateGameUI()
                     saveGameData()
-                    showShopScreen() // Обновляем экран магазина
+                    showShopScreen()
                 } else {
                     Toast.makeText(this, "Not enough coins!", Toast.LENGTH_SHORT).show()
                 }
@@ -292,28 +394,22 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyUpgrade(type: String) {
         when (type) {
-            "CLICK" -> clickPower += 1
+            "CLICK_1" -> clickPower += 1
+            "CLICK_10" -> clickPower += 10
             "MULTIPLY_CLICK" -> clickPower *= 2
-            "AUTO" -> autoIncome += 20
+            "AUTO_20" -> autoIncome += 20
+            "AUTO_100" -> autoIncome += 100
             "MULTIPLY_AUTO" -> autoIncome *= 2
         }
     }
 
-    // ==========================================
-    // ЛОГИКА ИГРЫ (Таймер и Сохранения)
-    // ==========================================
     private fun startAutoIncomeTimer() {
         if (timerRunning) return
         timerRunning = true
-        
-        // Каждые 5 минут (300 000 мс) начисляем автодоход
-        // Для теста можешь поставить 10000 (10 секунд)
         val interval = 300000L 
         
         object : CountDownTimer(interval, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                // Здесь можно обновлять текст "До следующего дохода: X сек"
-            }
+            override fun onTick(millisUntilFinished: Long) {}
             override fun onFinish() {
                 if (autoIncome > 0) {
                     coins += autoIncome
@@ -321,7 +417,7 @@ class MainActivity : AppCompatActivity() {
                     saveGameData()
                     Toast.makeText(this@MainActivity, "Auto Income: +$autoIncome coins!", Toast.LENGTH_SHORT).show()
                 }
-                startAutoIncomeTimer() // Запускаем заново
+                startAutoIncomeTimer()
             }
         }.start()
     }
@@ -338,7 +434,7 @@ class MainActivity : AppCompatActivity() {
             putLong("coins", coins)
             putLong("clickPower", clickPower)
             putLong("autoIncome", autoIncome)
-            putInt("upgradeLevel", upgradeLevel)
+            putString("itemLevels", itemLevels.joinToString(","))
             apply()
         }
     }
@@ -348,7 +444,14 @@ class MainActivity : AppCompatActivity() {
         coins = prefs.getLong("coins", 0)
         clickPower = prefs.getLong("clickPower", 1)
         autoIncome = prefs.getLong("autoIncome", 0)
-        upgradeLevel = prefs.getInt("upgradeLevel", 0)
+        
+        val savedLevels = prefs.getString("itemLevels", "0,0,0,0,0,0") ?: "0,0,0,0,0,0"
+        val levelsArray = savedLevels.split(",")
+        for (i in itemLevels.indices) {
+            if (i < levelsArray.size) {
+                itemLevels[i] = levelsArray[i].toIntOrNull() ?: 0
+            }
+        }
     }
 
     // ==========================================
@@ -413,39 +516,4 @@ class MainActivity : AppCompatActivity() {
             if (malicious > 0 && attributes.has("last_analysis_results")) {
                 report.append("--- Detected Threats ---\n")
                 val results = attributes.getJSONObject("last_analysis_results")
-                val keys = results.keys()
-                while (keys.hasNext()) {
-                    val engineName = keys.next()
-                    val engineData = results.getJSONObject(engineName)
-                    if (engineData.optString("category") == "malicious") {
-                        report.append("• $engineName: ${engineData.optString("result", "Unknown")}\n")
-                    }
-                }
-            } else if (malicious == 0) {
-                report.append("✅ No threats detected.")
-            }
-            updateUI(report.toString(), if (malicious > 0) Color.RED else Color.GREEN)
-        } catch (e: Exception) {
-            updateUI("Parsing error", Color.RED)
-        }
-    }
-
-    private fun updateUI(message: String, color: Int) {
-        resultText.text = message
-        resultText.setTextColor(color)
-    }
-
-    private fun getFileHash(file: File): String? {
-        return try {
-            val digest = MessageDigest.getInstance("SHA-256")
-            file.inputStream().use { input ->
-                val buffer = ByteArray(8192)
-                var bytesRead: Int
-                while (input.read(buffer).also { bytesRead = it } != -1) {
-                    digest.update(buffer, 0, bytesRead)
-                }
-            }
-            digest.digest().joinToString("") { "%02x".format(it) }
-        } catch (e: Exception) { null }
-    }
-}
+                val keys = re
