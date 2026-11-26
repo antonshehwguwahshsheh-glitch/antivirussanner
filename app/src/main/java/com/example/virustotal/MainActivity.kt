@@ -60,7 +60,11 @@ class MainActivity : AppCompatActivity() {
     private val getContent = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
         if (uri != null) {
             val tempFile = copyUriToFile(uri)
-            if (tempFile != null) scanFile(tempFile) else updateUI("Error loading file", Color.RED)
+            if (tempFile != null) {
+                scanFile(tempFile)
+            } else {
+                updateUI("Error loading file", Color.RED)
+            }
         }
     }
 
@@ -90,16 +94,20 @@ class MainActivity : AppCompatActivity() {
         
         try {
             layout.setBackgroundResource(R.drawable.avatar_girl)
-            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#AA000000"), Color.parseColor("#EE000000")))
-            layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
+            val topColor = Color.parseColor("#AA000000")
+            val bottomColor = Color.parseColor("#EE000000")
+            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(topColor, bottomColor))
+            val layers = arrayOf(layout.background, overlay)
+            layout.background = android.graphics.drawable.LayerDrawable(layers)
         } catch (e: Exception) { }
 
         val title = TextView(this).apply {
             text = "LOGIN / REGISTER"
             textSize = 32f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor("#00FFFF"))
-            setShadowLayer(15f, 0f, 0f, Color.parseColor("#00FFFF"))
+            val cyanColor = Color.parseColor("#00FFFF")
+            setTextColor(cyanColor)
+            setShadowLayer(15f, 0f, 0f, cyanColor)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 32)
         }
@@ -108,19 +116,26 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(200, 200)
             setImageResource(R.drawable.avatar_girl)
             scaleType = ImageView.ScaleType.CENTER_CROP
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.GRAY) }
+            background = GradientDrawable().apply { 
+                shape = GradientDrawable.OVAL
+                setColor(Color.GRAY) 
+            }
         }
 
         val selectAvatarBtn = Button(this).apply {
             text = "📷 SELECT AVATAR"
             setBackgroundColor(Color.parseColor("#6B7280"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 16, 0, 24) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 16, 0, 24) }
         }
 
         val inputName = EditText(this).apply {
             hint = "Enter Nickname"
-            setTextColor(Color.parseColor("#FF00FF"))
+            val pinkColor = Color.parseColor("#FF00FF")
+            setTextColor(pinkColor)
             setHintTextColor(Color.GRAY)
             textSize = 20f
             inputType = InputType.TYPE_CLASS_TEXT
@@ -129,7 +144,8 @@ class MainActivity : AppCompatActivity() {
 
         val inputPass = EditText(this).apply {
             hint = "Enter Password"
-            setTextColor(Color.parseColor("#FF00FF"))
+            val pinkColor = Color.parseColor("#FF00FF")
+            setTextColor(pinkColor)
             setHintTextColor(Color.GRAY)
             textSize = 20f
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
@@ -141,7 +157,10 @@ class MainActivity : AppCompatActivity() {
             text = "LOGIN / CREATE"
             setBackgroundColor(Color.parseColor("#10B981"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120).apply { setMargins(0, 32, 0, 0) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                120
+            ).apply { setMargins(0, 32, 0, 0) }
         }
 
         layout.addView(title)
@@ -171,7 +190,8 @@ class MainActivity : AppCompatActivity() {
 
             playerName = name.uppercase()
             playerPass = pass
-            val randomPart = (1..4).map { "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".random() }.joinToString("")
+            val chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+            val randomPart = (1..4).map { chars.random() }.joinToString("")
             playerId = "MACACA-$randomPart"
             
             saveLoginToPrefs()
@@ -211,8 +231,11 @@ class MainActivity : AppCompatActivity() {
         
         try {
             layout.setBackgroundResource(R.drawable.bg_girl)
-            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#99000000"), Color.parseColor("#EE000000")))
-            layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
+            val topColor = Color.parseColor("#99000000")
+            val bottomColor = Color.parseColor("#EE000000")
+            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(topColor, bottomColor))
+            val layers = arrayOf(layout.background, overlay)
+            layout.background = android.graphics.drawable.LayerDrawable(layers)
         } catch (e: Exception) { }
 
         val profileBtn = Button(this).apply {
@@ -220,15 +243,19 @@ class MainActivity : AppCompatActivity() {
             textSize = 18f
             setBackgroundColor(Color.parseColor("#4B5563"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 24) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, 24) }
         }
 
         val title = TextView(this).apply {
             text = "VirusTotal"
             textSize = 32f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor("#FF00FF"))
-            setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF"))
+            val pinkColor = Color.parseColor("#FF00FF")
+            setTextColor(pinkColor)
+            setShadowLayer(10f, 0f, 0f, pinkColor)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 32)
         }
@@ -238,7 +265,10 @@ class MainActivity : AppCompatActivity() {
             textSize = 16f
             setBackgroundColor(Color.parseColor("#3B82F6"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 100).apply { setMargins(0, 0, 0, 16) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                100
+            ).apply { setMargins(0, 0, 0, 16) }
         }
 
         val gameButton = Button(this).apply {
@@ -246,7 +276,10 @@ class MainActivity : AppCompatActivity() {
             textSize = 16f
             setBackgroundColor(Color.parseColor("#F59E0B"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 100).apply { setMargins(0, 0, 0, 16) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                100
+            ).apply { setMargins(0, 0, 0, 16) }
         }
 
         val tgButton = createRainbowButton("📢 MY TELEGRAM CHANNEL") { openTelegramChannel() }
@@ -272,8 +305,11 @@ class MainActivity : AppCompatActivity() {
         
         try {
             layout.setBackgroundResource(R.drawable.bg_car)
-            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#AA000000"), Color.parseColor("#EE000000")))
-            layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
+            val topColor = Color.parseColor("#AA000000")
+            val bottomColor = Color.parseColor("#EE000000")
+            val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(topColor, bottomColor))
+            val layers = arrayOf(layout.background, overlay)
+            layout.background = android.graphics.drawable.LayerDrawable(layers)
         } catch (e: Exception) { }
 
         val backBtn = Button(this).apply {
@@ -285,7 +321,10 @@ class MainActivity : AppCompatActivity() {
 
         val avatarView = ImageView(this).apply {
             layoutParams = LinearLayout.LayoutParams(250, 250)
-            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#4B5563")) }
+            background = GradientDrawable().apply { 
+                shape = GradientDrawable.OVAL
+                setColor(Color.parseColor("#4B5563")) 
+            }
             scaleType = ImageView.ScaleType.CENTER_CROP
             
             if (avatarPath == "default" || avatarPath.isEmpty()) {
@@ -293,9 +332,14 @@ class MainActivity : AppCompatActivity() {
             } else {
                 try {
                     val imgFile = File(avatarPath)
-                    if (imgFile.exists()) setImageBitmap(BitmapFactory.decodeFile(imgFile.absolutePath))
-                    else setImageResource(R.drawable.avatar_girl)
-                } catch (e: Exception) { setImageResource(R.drawable.avatar_girl) }
+                    if (imgFile.exists()) {
+                        setImageBitmap(BitmapFactory.decodeFile(imgFile.absolutePath))
+                    } else {
+                        setImageResource(R.drawable.avatar_girl)
+                    }
+                } catch (e: Exception) { 
+                    setImageResource(R.drawable.avatar_girl) 
+                }
             }
         }
 
@@ -303,8 +347,9 @@ class MainActivity : AppCompatActivity() {
             text = "$playerName's PROFILE"
             textSize = 24f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor("#10B981"))
-            setShadowLayer(10f, 0f, 0f, Color.parseColor("#10B981"))
+            val greenColor = Color.parseColor("#10B981")
+            setTextColor(greenColor)
+            setShadowLayer(10f, 0f, 0f, greenColor)
             gravity = Gravity.CENTER
             setPadding(0, 16, 0, 24)
         }
@@ -313,7 +358,10 @@ class MainActivity : AppCompatActivity() {
             text = "CHANGE AVATAR"
             setBackgroundColor(Color.parseColor("#8B5CF6"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 24) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 0, 24) }
         }
 
         var isIdVisible = false
@@ -335,7 +383,10 @@ class MainActivity : AppCompatActivity() {
             text = "👁️ SHOW"
             setBackgroundColor(Color.parseColor("#6B7280"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 16, 0) }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { setMargins(0, 0, 16, 0) }
         }
 
         val copyIdBtn = Button(this).apply {
@@ -351,7 +402,10 @@ class MainActivity : AppCompatActivity() {
             text = "LOG OUT / SWITCH ACCOUNT"
             setBackgroundColor(Color.parseColor("#EF4444"))
             setTextColor(Color.WHITE)
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
 
         layout.addView(backBtn)
@@ -397,44 +451,111 @@ class MainActivity : AppCompatActivity() {
     private fun showScannerScreen() {
         val prefs = getSharedPreferences("VirusTotalPrefs", Context.MODE_PRIVATE)
         apiKey = prefs.getString("api_key", "") ?: ""
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 32, 32, 32) }
+        val layout = LinearLayout(this).apply { 
+            orientation = LinearLayout.VERTICAL
+            setPadding(32, 32, 32, 32) 
+        }
         applyGtaBackground(layout)
-        val backBtn = Button(this).apply { text = "← BACK"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
+        
+        val backBtn = Button(this).apply { 
+            text = "← BACK"
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.START 
+        }
         backBtn.setOnClickListener { showMainMenu() }
-        val title = TextView(this).apply { text = "Antivirus Scanner"; textSize = 24f; setTextColor(Color.WHITE); setPadding(0, 16, 0, 16) }
-        apiKeyInput = EditText(this).apply { hint = "Enter API Key"; setText(apiKey); setTextColor(Color.WHITE); inputType = InputType.TYPE_CLASS_TEXT }
-        val saveKeyButton = Button(this).apply { text = "SAVE KEY"; setBackgroundColor(Color.GRAY); setTextColor(Color.WHITE) }
-        val scanFileButton = Button(this).apply { text = "SELECT & SCAN FILE"; setBackgroundColor(Color.parseColor("#3B82F6")); setTextColor(Color.WHITE) }
+        
+        val title = TextView(this).apply { 
+            text = "Antivirus Scanner"
+            textSize = 24f
+            setTextColor(Color.WHITE)
+            setPadding(0, 16, 0, 16) 
+        }
+        
+        apiKeyInput = EditText(this).apply { 
+            hint = "Enter API Key"
+            setText(apiKey)
+            setTextColor(Color.WHITE)
+            inputType = InputType.TYPE_CLASS_TEXT 
+        }
+        
+        val saveKeyButton = Button(this).apply { 
+            text = "SAVE KEY"
+            setBackgroundColor(Color.GRAY)
+            setTextColor(Color.WHITE) 
+        }
+        
+        val scanFileButton = Button(this).apply { 
+            text = "SELECT & SCAN FILE"
+            setBackgroundColor(Color.parseColor("#3B82F6"))
+            setTextColor(Color.WHITE) 
+        }
+        
         progressBar = ProgressBar(this).apply { visibility = View.GONE }
-        resultText = TextView(this).apply { text = "Ready to scan..."; setTextColor(Color.LTGRAY) }
-        val scrollView = ScrollView(this).apply { layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f); addView(resultText) }
-        layout.addView(backBtn); layout.addView(title); layout.addView(apiKeyInput); layout.addView(saveKeyButton); layout.addView(scanFileButton); layout.addView(progressBar); layout.addView(scrollView)
+        resultText = TextView(this).apply { 
+            text = "Ready to scan..."
+            setTextColor(Color.LTGRAY) 
+        }
+        
+        val scrollView = ScrollView(this).apply { 
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, 
+                0, 
+                1f
+            )
+            addView(resultText) 
+        }
+        
+        layout.addView(backBtn)
+        layout.addView(title)
+        layout.addView(apiKeyInput)
+        layout.addView(saveKeyButton)
+        layout.addView(scanFileButton)
+        layout.addView(progressBar)
+        layout.addView(scrollView)
         setContentView(layout)
-        saveKeyButton.setOnClickListener { apiKey = apiKeyInput.text.toString().trim(); prefs.edit().putString("api_key", apiKey).apply(); Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show() }
-        scanFileButton.setOnClickListener { if (apiKey.isNotEmpty()) getContent.launch("*/*") else Toast.makeText(this, "Enter Key", Toast.LENGTH_SHORT).show() }
+        
+        saveKeyButton.setOnClickListener { 
+            apiKey = apiKeyInput.text.toString().trim()
+            prefs.edit().putString("api_key", apiKey).apply()
+            Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show() 
+        }
+        
+        scanFileButton.setOnClickListener { 
+            if (apiKey.isNotEmpty()) {
+                getContent.launch("*/*")
+            } else {
+                Toast.makeText(this, "Enter Key", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun showGameScreen() {
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(48, 48, 48, 48) }
+        val layout = LinearLayout(this).apply { 
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(48, 48, 48, 48) 
+        }
         applyGtaBackground(layout)
-        val backBtn = Button(this).apply { text = "← BACK TO MENU"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
+        
+        val backBtn = Button(this).apply { 
+            text = "← BACK TO MENU"
+            setBackgroundColor(Color.TRANSPARENT)
+            setTextColor(Color.WHITE)
+            gravity = Gravity.START 
+        }
         backBtn.setOnClickListener { showMainMenu() }
-        val title = TextView(this).apply { text = "💰 COIN CLICKER"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.parseColor("#FF00FF")); setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF")); setPadding(0, 16, 0, 32) }
-        coinText = TextView(this).apply { text = "Coins: $coins"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
-        clickPowerText = TextView(this).apply { text = "Tap Power: +$clickPower"; textSize = 16f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 8, 0, 8) }
-        autoIncomeText = TextView(this).apply { text = "Auto: +$autoIncome / 5 min"; textSize = 14f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 0, 0, 32) }
-        val clickButton = Button(this).apply { text = "TAP ME!"; textSize = 24f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(400, 400); background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#10B981")) } }
-        val shopButton = Button(this).apply { text = "🛒 OPEN SHOP"; textSize = 18f; setBackgroundColor(Color.parseColor("#8B5CF6")); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 48, 0, 24) } }
-        layout.addView(backBtn); layout.addView(title); layout.addView(coinText); layout.addView(clickPowerText); layout.addView(autoIncomeText); layout.addView(clickButton); layout.addView(shopButton)
-        setContentView(layout)
-        clickButton.setOnClickListener { coins += clickPower; updateGameUI() }
-        shopButton.setOnClickListener { showShopScreen() }
-        startAutoIncomeTimer()
-    }
-
-    private fun showShopScreen() {
-        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 32, 32, 32) }
-        applyGtaBackground(layout)
-        val backBtn = Button(this).apply { text = "← BACK TO GAME"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
-        backBtn.setOnClickListener { showGameScreen() }
-        val title = TextView(this).apply { text = "🛒 SHOP"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.parseColor("#FF00FF")); setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF")); setPadding(0, 16, 0, 3
+        
+        val title = TextView(this).apply { 
+            text = "💰 COIN CLICKER"
+            textSize = 28f
+            setTypeface(null, Typeface.BOLD)
+            val pinkColor = Color.parseColor("#FF00FF")
+            setTextColor(pinkColor)
+            setShadowLayer(10f, 0f, 0f, pinkColor)
+            setPadding(0, 16, 0, 32) 
+        }
+        
+        coinText = TextView(this).apply { 
+            text = "Coins: $coins"
+        
