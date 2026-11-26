@@ -18,8 +18,6 @@ import android.widget.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import okhttp3.*
-import okhttp3.MediaType.Companion.toMediaType
-import okhttp3.RequestBody.Companion.toRequestBody
 import org.json.JSONObject
 import java.io.File
 import java.io.FileOutputStream
@@ -30,18 +28,6 @@ import java.util.UUID
 
 class MainActivity : AppCompatActivity() {
 
-    // --- КЛЮЧ РАЗБИТ НА 2 ЧАСТИ (ЧТОБЫ GITHUB НЕ ЛОМАЛ) ---
-    private val part1 = "$2a$10$WezU1SQqQ8VsB1"
-    private val part2 = "HETuV14Ouwwa5OOBCaYqwqBglLxWd8Yy2nzdCdq"
-    private val jsonBinApiKey = part1 + part2
-    private val jsonBinId = "6b083926ab3a7b614482c5d1"
-
-    // --- ЦВЕТА (ЧТОБЫ НЕ БЫЛО ОШИБОК) ---
-    private val neonPink = "#FF00FF"
-    private val neonCyan = "#00FFFF"
-    private val neonGreen = "#10B981"
-
-    // --- Переменные ---
     private var apiKey: String = ""
     private lateinit var resultText: TextView
     private lateinit var progressBar: ProgressBar
@@ -95,9 +81,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ==========================================
-    // ЭКРАН ВХОДА
-    // ==========================================
     private fun showLoginScreen() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -109,16 +92,14 @@ class MainActivity : AppCompatActivity() {
             layout.setBackgroundResource(R.drawable.avatar_girl)
             val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#AA000000"), Color.parseColor("#EE000000")))
             layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
-        } catch (e: Exception) {
-            applyGtaBackground(layout)
-        }
+        } catch (e: Exception) { }
 
         val title = TextView(this).apply {
             text = "LOGIN / REGISTER"
             textSize = 32f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor(neonCyan))
-            setShadowLayer(15f, 0f, 0f, Color.parseColor(neonCyan))
+            setTextColor(Color.parseColor("#00FFFF"))
+            setShadowLayer(15f, 0f, 0f, Color.parseColor("#00FFFF"))
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 32)
         }
@@ -127,10 +108,7 @@ class MainActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(200, 200)
             setImageResource(R.drawable.avatar_girl)
             scaleType = ImageView.ScaleType.CENTER_CROP
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.GRAY)
-            }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.GRAY) }
         }
 
         val selectAvatarBtn = Button(this).apply {
@@ -142,20 +120,18 @@ class MainActivity : AppCompatActivity() {
 
         val inputName = EditText(this).apply {
             hint = "Enter Nickname"
-            setTextColor(Color.parseColor(neonPink))
+            setTextColor(Color.parseColor("#FF00FF"))
             setHintTextColor(Color.GRAY)
             textSize = 20f
-            setShadowLayer(10f, 0f, 0f, Color.parseColor(neonPink))
             inputType = InputType.TYPE_CLASS_TEXT
             gravity = Gravity.CENTER
         }
 
         val inputPass = EditText(this).apply {
             hint = "Enter Password"
-            setTextColor(Color.parseColor(neonPink))
+            setTextColor(Color.parseColor("#FF00FF"))
             setHintTextColor(Color.GRAY)
             textSize = 20f
-            setShadowLayer(10f, 0f, 0f, Color.parseColor(neonPink))
             inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
             gravity = Gravity.CENTER
             setPadding(0, 24, 0, 24)
@@ -163,7 +139,7 @@ class MainActivity : AppCompatActivity() {
 
         val loginBtn = Button(this).apply {
             text = "LOGIN / CREATE"
-            setBackgroundColor(Color.parseColor(neonGreen))
+            setBackgroundColor(Color.parseColor("#10B981"))
             setTextColor(Color.WHITE)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120).apply { setMargins(0, 32, 0, 0) }
         }
@@ -176,9 +152,7 @@ class MainActivity : AppCompatActivity() {
         layout.addView(loginBtn)
         setContentView(layout)
 
-        selectAvatarBtn.setOnClickListener {
-            getAvatar.launch("image/*")
-        }
+        selectAvatarBtn.setOnClickListener { getAvatar.launch("image/*") }
 
         loginBtn.setOnClickListener {
             val name = inputName.text.toString().trim()
@@ -195,7 +169,14 @@ class MainActivity : AppCompatActivity() {
                 avatarPath = "default"
             }
 
-            checkAccountInCloud(name, pass)
+            playerName = name.uppercase()
+            playerPass = pass
+            val randomPart = (1..4).map { "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".random() }.joinToString("")
+            playerId = "MACACA-$randomPart"
+            
+            saveLoginToPrefs()
+            loadGameData()
+            showMainMenu()
         }
     }
 
@@ -208,71 +189,7 @@ class MainActivity : AppCompatActivity() {
             inputStream?.close()
             outputStream.close()
             file.absolutePath
-        } catch (e: Exception) {
-            ""
-        }
-    }
-
-    private fun checkAccountInCloud(name: String, pass: String) {
-        val url = "https://api.jsonbin.io/v3/b/$jsonBinId/latest"
-        val request = Request.Builder().url(url).addHeader("X-Master-Key", jsonBinApiKey).get().build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {
-                runOnUiThread { Toast.makeText(this@MainActivity, "No internet", Toast.LENGTH_SHORT).show() }
-            }
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string()
-                runOnUiThread {
-                    var accountFound = false
-                    var savedPass = ""
-                    var uniqueId = ""
-                    var savedAvatar = ""
-
-                    try {
-                        if (body != null) {
-                            val record = JSONObject(body).getJSONObject("record")
-                            if (record.has(name.uppercase())) {
-                                accountFound = true
-                                val userObj = record.getJSONObject(name.uppercase())
-                                savedPass = userObj.getString("pass")
-                                uniqueId = userObj.getString("uniqueId")
-                                savedAvatar = userObj.optString("avatar", "")
-                            }
-                        }
-                    } catch (e: Exception) {}
-
-                    if (accountFound) {
-                        if (savedPass == pass) {
-                            playerName = name.uppercase()
-                            playerId = uniqueId
-                            playerPass = pass
-                            avatarPath = savedAvatar
-                            saveLoginToPrefs()
-                            downloadFromCloud(playerId)
-                        } else {
-                            Toast.makeText(this@MainActivity, "Wrong password!", Toast.LENGTH_SHORT).show()
-                        }
-                    } else {
-                        playerName = name.uppercase()
-                        playerPass = pass
-                        val characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-                        val randomPart = (1..4).map { characters.random() }.joinToString("")
-                        playerId = "MACACA-$randomPart"
-                        
-                        saveLoginToPrefs()
-                        coins = 0
-                        clickPower = 1
-                        autoIncome = 0
-                        itemLevels = IntArray(6) { 0 }
-                        
-                        uploadToCloud()
-                        Toast.makeText(this@MainActivity, "Account Created!", Toast.LENGTH_SHORT).show()
-                        showMainMenu()
-                    }
-                }
-            }
-        })
+        } catch (e: Exception) { "" }
     }
 
     private fun saveLoginToPrefs() {
@@ -285,92 +202,6 @@ class MainActivity : AppCompatActivity() {
             .apply()
     }
 
-    // ==========================================
-    // ОБЛАКО
-    // ==========================================
-    private fun uploadToCloud() {
-        val json = JSONObject().apply {
-            put("coins", coins)
-            put("clickPower", clickPower)
-            put("autoIncome", autoIncome)
-            put("itemLevels", itemLevels.joinToString(","))
-            put("pass", playerPass)
-            put("uniqueId", playerId)
-            put("avatar", avatarPath)
-        }
-
-        val url = "https://api.jsonbin.io/v3/b/$jsonBinId/latest"
-        val request = Request.Builder().url(url).addHeader("X-Master-Key", jsonBinApiKey).get().build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string()
-                var allData = JSONObject()
-                try {
-                    if (body != null) allData = JSONObject(body).getJSONObject("record")
-                } catch (e: Exception) {}
-
-                allData.put(playerName, json)
-
-                val mediaType = "application/json; charset=utf-8".toMediaType()
-                val bodyToSend = allData.toString().toRequestBody(mediaType)
-
-                val putRequest = Request.Builder().url("https://api.jsonbin.io/v3/b/$jsonBinId")
-                    .addHeader("X-Master-Key", jsonBinApiKey).put(bodyToSend).build()
-
-                client.newCall(putRequest).enqueue(object : Callback {
-                    override fun onResponse(call: Call, response: Response) {
-                        runOnUiThread {
-                            if (response.isSuccessful) Toast.makeText(this@MainActivity, "Progress Saved!", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-                    override fun onFailure(call: Call, e: IOException) {}
-                })
-            }
-        })
-    }
-
-    private fun downloadFromCloud(idToLoad: String) {
-        val url = "https://api.jsonbin.io/v3/b/$jsonBinId/latest"
-        val request = Request.Builder().url(url).addHeader("X-Master-Key", jsonBinApiKey).get().build()
-
-        client.newCall(request).enqueue(object : Callback {
-            override fun onFailure(call: Call, e: IOException) {}
-            override fun onResponse(call: Call, response: Response) {
-                val body = response.body?.string()
-                runOnUiThread {
-                    try {
-                        if (body != null) {
-                            val record = JSONObject(body).getJSONObject("record")
-                            if (record.has(playerName)) {
-                                val data = record.getJSONObject(playerName)
-                                coins = data.getLong("coins")
-                                clickPower = data.getLong("clickPower")
-                                autoIncome = data.getLong("autoIncome")
-                                avatarPath = data.optString("avatar", "")
-                                
-                                val levelsStr = data.getString("itemLevels")
-                                val levelsArray = levelsStr.split(",")
-                                for (i in itemLevels.indices) {
-                                    if (i < levelsArray.size) itemLevels[i] = levelsArray[i].toIntOrNull() ?: 0
-                                }
-                                saveGameData()
-                                Toast.makeText(this@MainActivity, "Welcome back!", Toast.LENGTH_SHORT).show()
-                                showMainMenu()
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Toast.makeText(this@MainActivity, "Error loading data", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        })
-    }
-
-    // ==========================================
-    // ГЛАВНОЕ МЕНЮ
-    // ==========================================
     private fun showMainMenu() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -382,9 +213,7 @@ class MainActivity : AppCompatActivity() {
             layout.setBackgroundResource(R.drawable.bg_girl)
             val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#99000000"), Color.parseColor("#EE000000")))
             layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
-        } catch (e: Exception) {
-            applyGtaBackground(layout)
-        }
+        } catch (e: Exception) { }
 
         val profileBtn = Button(this).apply {
             text = "$playerName"
@@ -398,8 +227,8 @@ class MainActivity : AppCompatActivity() {
             text = "VirusTotal"
             textSize = 32f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor(neonPink))
-            setShadowLayer(10f, 0f, 0f, Color.parseColor(neonPink))
+            setTextColor(Color.parseColor("#FF00FF"))
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF"))
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, 32)
         }
@@ -434,9 +263,6 @@ class MainActivity : AppCompatActivity() {
         gameButton.setOnClickListener { showGameScreen() }
     }
 
-    // ==========================================
-    // ПРОФИЛЬ
-    // ==========================================
     private fun showProfileScreen() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -448,9 +274,7 @@ class MainActivity : AppCompatActivity() {
             layout.setBackgroundResource(R.drawable.bg_car)
             val overlay = GradientDrawable(GradientDrawable.Orientation.TOP_BOTTOM, intArrayOf(Color.parseColor("#AA000000"), Color.parseColor("#EE000000")))
             layout.background = android.graphics.drawable.LayerDrawable(arrayOf(layout.background, overlay))
-        } catch (e: Exception) {
-            applyGtaBackground(layout)
-        }
+        } catch (e: Exception) { }
 
         val backBtn = Button(this).apply {
             text = "← BACK"
@@ -461,10 +285,7 @@ class MainActivity : AppCompatActivity() {
 
         val avatarView = ImageView(this).apply {
             layoutParams = LinearLayout.LayoutParams(250, 250)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(Color.parseColor("#4B5563"))
-            }
+            background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#4B5563")) }
             scaleType = ImageView.ScaleType.CENTER_CROP
             
             if (avatarPath == "default" || avatarPath.isEmpty()) {
@@ -472,15 +293,9 @@ class MainActivity : AppCompatActivity() {
             } else {
                 try {
                     val imgFile = File(avatarPath)
-                    if (imgFile.exists()) {
-                        val myBitmap = BitmapFactory.decodeFile(imgFile.absolutePath)
-                        setImageBitmap(myBitmap)
-                    } else {
-                        setImageResource(R.drawable.avatar_girl)
-                    }
-                } catch (e: Exception) {
-                    setImageResource(R.drawable.avatar_girl)
-                }
+                    if (imgFile.exists()) setImageBitmap(BitmapFactory.decodeFile(imgFile.absolutePath))
+                    else setImageResource(R.drawable.avatar_girl)
+                } catch (e: Exception) { setImageResource(R.drawable.avatar_girl) }
             }
         }
 
@@ -488,6 +303,138 @@ class MainActivity : AppCompatActivity() {
             text = "$playerName's PROFILE"
             textSize = 24f
             setTypeface(null, Typeface.BOLD)
-            setTextColor(Color.parseColor(neonGreen))
-            setShadowLayer(10f, 0f, 0f, Color.parseColor(neonGreen))
-        
+            setTextColor(Color.parseColor("#10B981"))
+            setShadowLayer(10f, 0f, 0f, Color.parseColor("#10B981"))
+            gravity = Gravity.CENTER
+            setPadding(0, 16, 0, 24)
+        }
+
+        val changeAvatarBtn = Button(this).apply {
+            text = "CHANGE AVATAR"
+            setBackgroundColor(Color.parseColor("#8B5CF6"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 0, 24) }
+        }
+
+        var isIdVisible = false
+        val idText = TextView(this).apply {
+            text = "Unique ID: ****"
+            textSize = 18f
+            setTextColor(Color.LTGRAY)
+            gravity = Gravity.CENTER
+            setPadding(0, 8, 0, 8)
+        }
+
+        val idButtonsLayout = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 24)
+        }
+
+        val showIdBtn = Button(this).apply {
+            text = "👁️ SHOW"
+            setBackgroundColor(Color.parseColor("#6B7280"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 0, 16, 0) }
+        }
+
+        val copyIdBtn = Button(this).apply {
+            text = "📋 COPY"
+            setBackgroundColor(Color.parseColor("#3B82F6"))
+            setTextColor(Color.WHITE)
+        }
+
+        idButtonsLayout.addView(showIdBtn)
+        idButtonsLayout.addView(copyIdBtn)
+
+        val logoutBtn = Button(this).apply {
+            text = "LOG OUT / SWITCH ACCOUNT"
+            setBackgroundColor(Color.parseColor("#EF4444"))
+            setTextColor(Color.WHITE)
+            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+        }
+
+        layout.addView(backBtn)
+        layout.addView(avatarView)
+        layout.addView(title)
+        layout.addView(changeAvatarBtn)
+        layout.addView(idText)
+        layout.addView(idButtonsLayout)
+        layout.addView(logoutBtn)
+        setContentView(layout)
+
+        changeAvatarBtn.setOnClickListener { getAvatar.launch("image/*") }
+
+        showIdBtn.setOnClickListener {
+            isIdVisible = !isIdVisible
+            if (isIdVisible) {
+                idText.text = "Unique ID: $playerId"
+                showIdBtn.text = "🙈 HIDE"
+            } else {
+                idText.text = "Unique ID: ****"
+                showIdBtn.text = "👁️ SHOW"
+            }
+        }
+
+        copyIdBtn.setOnClickListener {
+            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            val clip = ClipData.newPlainText("Player ID", playerId)
+            clipboard.setPrimaryClip(clip)
+            Toast.makeText(this, "ID Copied!", Toast.LENGTH_SHORT).show()
+        }
+
+        logoutBtn.setOnClickListener {
+            val prefs = getSharedPreferences("GamePrefs", Context.MODE_PRIVATE)
+            prefs.edit().clear().apply()
+            playerId = ""
+            playerName = ""
+            playerPass = ""
+            avatarPath = ""
+            showLoginScreen()
+        }
+    }
+
+    private fun showScannerScreen() {
+        val prefs = getSharedPreferences("VirusTotalPrefs", Context.MODE_PRIVATE)
+        apiKey = prefs.getString("api_key", "") ?: ""
+        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 32, 32, 32) }
+        applyGtaBackground(layout)
+        val backBtn = Button(this).apply { text = "← BACK"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
+        backBtn.setOnClickListener { showMainMenu() }
+        val title = TextView(this).apply { text = "Antivirus Scanner"; textSize = 24f; setTextColor(Color.WHITE); setPadding(0, 16, 0, 16) }
+        apiKeyInput = EditText(this).apply { hint = "Enter API Key"; setText(apiKey); setTextColor(Color.WHITE); inputType = InputType.TYPE_CLASS_TEXT }
+        val saveKeyButton = Button(this).apply { text = "SAVE KEY"; setBackgroundColor(Color.GRAY); setTextColor(Color.WHITE) }
+        val scanFileButton = Button(this).apply { text = "SELECT & SCAN FILE"; setBackgroundColor(Color.parseColor("#3B82F6")); setTextColor(Color.WHITE) }
+        progressBar = ProgressBar(this).apply { visibility = View.GONE }
+        resultText = TextView(this).apply { text = "Ready to scan..."; setTextColor(Color.LTGRAY) }
+        val scrollView = ScrollView(this).apply { layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1f); addView(resultText) }
+        layout.addView(backBtn); layout.addView(title); layout.addView(apiKeyInput); layout.addView(saveKeyButton); layout.addView(scanFileButton); layout.addView(progressBar); layout.addView(scrollView)
+        setContentView(layout)
+        saveKeyButton.setOnClickListener { apiKey = apiKeyInput.text.toString().trim(); prefs.edit().putString("api_key", apiKey).apply(); Toast.makeText(this, "Saved!", Toast.LENGTH_SHORT).show() }
+        scanFileButton.setOnClickListener { if (apiKey.isNotEmpty()) getContent.launch("*/*") else Toast.makeText(this, "Enter Key", Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun showGameScreen() {
+        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; gravity = Gravity.CENTER_HORIZONTAL; setPadding(48, 48, 48, 48) }
+        applyGtaBackground(layout)
+        val backBtn = Button(this).apply { text = "← BACK TO MENU"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
+        backBtn.setOnClickListener { showMainMenu() }
+        val title = TextView(this).apply { text = "💰 COIN CLICKER"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.parseColor("#FF00FF")); setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF")); setPadding(0, 16, 0, 32) }
+        coinText = TextView(this).apply { text = "Coins: $coins"; textSize = 32f; setTextColor(Color.WHITE); gravity = Gravity.CENTER }
+        clickPowerText = TextView(this).apply { text = "Tap Power: +$clickPower"; textSize = 16f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 8, 0, 8) }
+        autoIncomeText = TextView(this).apply { text = "Auto: +$autoIncome / 5 min"; textSize = 14f; setTextColor(Color.LTGRAY); gravity = Gravity.CENTER; setPadding(0, 0, 0, 32) }
+        val clickButton = Button(this).apply { text = "TAP ME!"; textSize = 24f; setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(400, 400); background = GradientDrawable().apply { shape = GradientDrawable.OVAL; setColor(Color.parseColor("#10B981")) } }
+        val shopButton = Button(this).apply { text = "🛒 OPEN SHOP"; textSize = 18f; setBackgroundColor(Color.parseColor("#8B5CF6")); setTextColor(Color.WHITE); layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply { setMargins(0, 48, 0, 24) } }
+        layout.addView(backBtn); layout.addView(title); layout.addView(coinText); layout.addView(clickPowerText); layout.addView(autoIncomeText); layout.addView(clickButton); layout.addView(shopButton)
+        setContentView(layout)
+        clickButton.setOnClickListener { coins += clickPower; updateGameUI() }
+        shopButton.setOnClickListener { showShopScreen() }
+        startAutoIncomeTimer()
+    }
+
+    private fun showShopScreen() {
+        val layout = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 32, 32, 32) }
+        applyGtaBackground(layout)
+        val backBtn = Button(this).apply { text = "← BACK TO GAME"; setBackgroundColor(Color.TRANSPARENT); setTextColor(Color.WHITE); gravity = Gravity.START }
+        backBtn.setOnClickListener { showGameScreen() }
+        val title = TextView(this).apply { text = "🛒 SHOP"; textSize = 28f; setTypeface(null, Typeface.BOLD); setTextColor(Color.parseColor("#FF00FF")); setShadowLayer(10f, 0f, 0f, Color.parseColor("#FF00FF")); setPadding(0, 16, 0, 3
