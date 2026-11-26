@@ -558,4 +558,4 @@ class MainActivity : AppCompatActivity() {
         
         coinText = TextView(this).apply { 
             text = "Coins: $coins"
-        
+        }
