@@ -24,14 +24,12 @@ import java.security.MessageDigest
 
 class MainActivity : AppCompatActivity() {
 
-    // --- Переменные для сканера ---
     private var apiKey: String = ""
     private lateinit var resultText: TextView
     private lateinit var progressBar: ProgressBar
     private lateinit var apiKeyInput: EditText
     private val client = OkHttpClient()
 
-    // --- Переменные для игры ---
     private var coins: Long = 0
     private var clickPower: Long = 1
     private var autoIncome: Long = 0
@@ -56,9 +54,6 @@ class MainActivity : AppCompatActivity() {
         showMainMenu()
     }
 
-    // ==========================================
-    // GTA VI STYLE BACKGROUND
-    // ==========================================
     private fun applyGtaBackground(layout: LinearLayout) {
         try {
             val resId = resources.getIdentifier("gta_bg", "drawable", packageName)
@@ -80,9 +75,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ==========================================
-    // РАДУЖНАЯ КНОПКА (ТГК)
-    // ==========================================
     private fun createRainbowButton(text: String, onClick: () -> Unit): Button {
         val button = Button(this).apply {
             this.text = text
@@ -90,7 +82,6 @@ class MainActivity : AppCompatActivity() {
             setTextColor(Color.WHITE)
             setTypeface(null, Typeface.BOLD)
             layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 120)
-            
             background = GradientDrawable(
                 GradientDrawable.Orientation.LEFT_RIGHT,
                 intArrayOf(
@@ -113,9 +104,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ==========================================
-    // ЭКРАН 1: ГЛАВНОЕ МЕНЮ
-    // ==========================================
     private fun showMainMenu() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -168,9 +156,6 @@ class MainActivity : AppCompatActivity() {
         gameButton.setOnClickListener { showGameScreen() }
     }
 
-    // ==========================================
-    // ЭКРАН 2: СКАНЕР
-    // ==========================================
     private fun showScannerScreen() {
         val prefs = getSharedPreferences("VirusTotalPrefs", Context.MODE_PRIVATE)
         apiKey = prefs.getString("api_key", "") ?: ""
@@ -239,9 +224,6 @@ class MainActivity : AppCompatActivity() {
         scanFileButton.setOnClickListener { if (apiKey.isNotEmpty()) getContent.launch("*/*") else Toast.makeText(this, "Enter Key", Toast.LENGTH_SHORT).show() }
     }
 
-    // ==========================================
-    // ЭКРАН 3: ИГРА КЛИКЕР
-    // ==========================================
     private fun showGameScreen() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -313,9 +295,6 @@ class MainActivity : AppCompatActivity() {
         startAutoIncomeTimer()
     }
 
-    // ==========================================
-    // ЭКРАН 4: МАГАЗИН
-    // ==========================================
     private fun showShopScreen() {
         val layout = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -448,9 +427,6 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    // ==========================================
-    // СЛУЖЕБНЫЕ ФУНКЦИИ ДЛЯ СКАНЕРА
-    // ==========================================
     private fun copyUriToFile(uri: Uri): File? {
         return try {
             val inputStream: InputStream? = contentResolver.openInputStream(uri)
@@ -515,4 +491,31 @@ class MainActivity : AppCompatActivity() {
                     val engineName = keys.next()
                     val engineData = results.getJSONObject(engineName)
                     if (engineData.optString("category") == "malicious") {
-                      
+                        report.append("• $engineName: ${engineData.optString("result", "Unknown")}\n")
+                    }
+                }
+            } else if (malicious == 0) {
+                report.append("✅ No threats detected.")
+            }
+            updateUI(report.toString(), if (malicious > 0) Color.RED else Color.GREEN)
+        } catch (e: Exception) {
+            updateUI("Parsing error", Color.RED)
+        }
+    }
+
+    private fun updateUI(message: String, color: Int) {
+        resultText.text = message
+        resultText.setTextColor(color)
+    }
+
+    private fun getFileHash(file: File): String? {
+        return try {
+            val digest = MessageDigest.getInstance("SHA-256")
+            file.inputStream().use { input ->
+                val buffer = ByteArray(8192)
+                var bytesRead: Int
+                while (input.read(buffer).also { bytesRead = it } != -1) {
+            digest.update(buffer, 0, bytesRead)
+        }
+    }
+}
