@@ -518,3 +518,4 @@ class MainActivity : AppCompatActivity() {
                     digest.update(buffer, 0, bytesRead)
                 }
             }
+            
