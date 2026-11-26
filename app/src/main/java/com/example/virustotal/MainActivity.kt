@@ -515,7 +515,7 @@ class MainActivity : AppCompatActivity() {
                 val buffer = ByteArray(8192)
                 var bytesRead: Int
                 while (input.read(buffer).also { bytesRead = it } != -1) {
-            digest.update(buffer, 0, bytesRead)
-        }
-    }
-}
+                    digest.update(buffer, 0, bytesRead)
+                }
+            }
+          
